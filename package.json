@@ -1,11 +1,15 @@
 {
-"name":"node-snapshot",
-"author":"Alejandro Morales",
-"version":"0.0.1",
-"description": "Read images from a  website, to generated thumbnails of the site",
-"dependencies":{
-  "express":"2.x.x",
-  "jsdom":"latest",
-  "request":"latest"
+  "name": "node-snapshot",
+  "author": "Alejandro Morales",
+  "version": "0.0.1",
+  "description": "Read images from a  website, to generated thumbnails of the site",
+  "dependencies": {
+    "express": "2.x.x",
+    "jsdom": "latest",
+    "request": "latest"
+  },
+  "subdomain": "snap",
+  "scripts": {
+    "start": "index.js"
   }
- }
+}
