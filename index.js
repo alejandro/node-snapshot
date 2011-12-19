@@ -1,55 +1,47 @@
-var request = require('request');
-var jsdom = require('jsdom');
-var express = require('express')
+var express = require('express');
+var crypto = require('crypto')
 var app = express.createServer();
 var url_ =require('url');
 app.configure(function(){
   app.use(express.bodyParser());
+  app.use(express.static(__dirname + '/public'));
 });
 app.get('/',function(req,res){
   var  url = 'http://' + req.query.url,
   options= {uri:url, headers:req.headers};
-if (/^(http:\/\/)([\w]+\.){1,}[A-Z]{2,}\b/gi.test(url)){
- request(url, function(e,d,b){
-    if (b != undefined && b != null){
-    b = new Buffer(b);b = b.toString(); var n = 0;
-      jsdom.env({html: b,scripts: []}, function (err, window) {
-        if (err){
-          res.end('["ERROR","Internal server error"]');
-        }else{
-        var imgs =[], document = window.document;
-        for(var i in document.images){
-          if (document.images[i].src != undefined){
-            var r = url_.parse(document.images[i].src).hostname;
-             if (url_.parse(document.images[i].src).hostname != undefined){
-               imgs.push(document.images[i].src)
-             }else {                
-               imgs.push(url +(document.images[i].src.substr(0,1)==='/' ? document.images[i].src : '/'+ document.images[i].src ));
-             }
-           }
-           if (Object.keys(document.images).length === n) {
-             res.writeHeader(200,{'Content-Type':'application/json'})
-             res.end(JSON.stringify(imgs));
-           }
-           n++;
-        }
-        }
-     });
-      
-    } else {
-     res.writeHead(404);
-     res.end('["No found: Use\n http://snap.nodejitsu.com/?url=URL"]');
-    }
-  });
-} else {
-  res.writeHead(200);
-  res.end('["Invalid URL"]');
-}
-
- });
+  var exec = require('child_process').exec;
+  var now = new Date().getTime();
+  var name =md5(url + now);
+  try {
+    exec(['phantomjs ',__dirname + '/render.js', url, name].join(' '), function(err,stdout,stderr){      
+      res.writeHead(200,{'Content-Type':'text/html'});
+      if (err){
+        res.write('Total time: ' +( new Date().getTime() - now )+ 'ms');
+        res.write('\n<p> go to <a href="/render/' + name + '.png">' + name+ '.png</a></p>')  
+      } else {
+        res.write('Total time: ' +( new Date().getTime() - now) + 'ms');
+        res.write('\n<p> go to <a href="/render/' + name + '.png">' + name+ '.png</a></p>')  
+      }
+      res.end()
+    });  
+  } catch(err){
+      res.write('Total time: ' + (new Date().getTime() - now )+ 'ms');
+      res.write('\n<p> go to <a href="/render/' + name + '.png">' + name+ '.png</a></p>')
+      res.end()
+  }
+});
+app.get('/render/:filename(*)',function(req,res){
+  try {
+    res.sendfile('./render/' + req.params.filename);
+  } catch(e){
+    res.end('ERROR NO EXISTE');
+  }
+})
  process.on('uncaughtException', function(excp) {
   console.log(excp.message);
   console.info((excp.stack).grey);
-
 });
+var md5 = module.exports.md5 = function(str) {
+  return crypto.createHash('md5').update(str).digest('hex');
+}
 app.listen(9000);
